@@ -52,6 +52,7 @@ class CommandProcessor {
     private Set<String> states = new LinkedHashSet<>();
     private String initialState = null;
     private Set<String> finalStates = new LinkedHashSet<>();
+    private Map<String, Map<String, String>> transitions = new LinkedHashMap<>();
 
     public CommandProcessor() { // constructor
         this.symbols = new LinkedHashSet<>(); // to store in a sorted way
@@ -168,4 +169,153 @@ class CommandProcessor {
             }
         }
     }
+
+    private void handleTransition(String[] parts) {
+        if (parts.length != 3) {
+            System.out.println("Warning: TRANSITION requires 3 arguments (fromState symbol toState)");
+            return;
+        }
+
+        String from = parts[0].toUpperCase();
+        String symbol = parts[1].toUpperCase();
+        String to = parts[2].toUpperCase();
+
+        if (!states.contains(from)) {
+            System.out.println("Warning: source state '" + from + "' not found, added automatically");
+            states.add(from);
+        }
+
+        if (!states.contains(to)) {
+            System.out.println("Warning: destination state '" + to + "' not found, added automatically");
+            states.add(to);
+        }
+
+        if (!symbols.contains(symbol)) {
+            System.out.println("Warning: symbol '" + symbol + "' not found, added automatically");
+            symbols.add(symbol);
+        }
+
+        transitions.putIfAbsent(from, new LinkedHashMap<>());
+
+        if (transitions.get(from).containsKey(symbol)) {
+            System.out.println("Warning: transition from '" + from + "' with symbol '" + symbol + "' already exists, overwritten");
+        }
+
+        transitions.get(from).put(symbol, to);
+    }
+
+    private void handleDelete(String[] parts) {
+        if (parts.length < 2) {
+            System.out.println("Warning: DELETE command requires type and name");
+            return;
+        }
+
+        String type = parts[0].toUpperCase();
+        String name = parts[1].toUpperCase();
+
+        switch (type) {
+            case "STATE":
+                if (states.remove(name)) {
+                    if (name.equals(initialState)) initialState = null;
+                    finalStates.remove(name);
+                    transitions.remove(name);
+                    for (Map<String, String> map : transitions.values()) {
+                        map.values().removeIf(val -> val.equals(name));
+                    }
+                    System.out.println("State '" + name + "' deleted.");
+                } else {
+                    System.out.println("Warning: state '" + name + "' not found.");
+                }
+                break;
+
+            case "SYMBOL":
+                if (symbols.remove(name)) {
+                    for (Map<String, String> map : transitions.values()) {
+                        map.remove(name);
+                    }
+                    System.out.println("Symbol '" + name + "' deleted.");
+                } else {
+                    System.out.println("Warning: symbol '" + name + "' not found.");
+                }
+                break;
+
+
+            case "TRANSITION":
+                handleTransition(Arrays.copyOfRange(parts, 1, parts.length));
+                break;
+               
+            case "DELETE":
+                handleDelete(Arrays.copyOfRange(parts, 1, parts.length));
+                break;
+
+            case "PRINT":
+
+                handlePrint();
+                break;
+
+            case "SIMULATE":
+                handleSimulate(Arrays.copyOfRange(parts, 1, parts.length));
+                break;
+
+            default:
+                System.out.println("Warning: unknown DELETE type '" + type + "'");
+        }
+    }
+
+    private void handlePrint() {
+        System.out.println("States:");
+        for (String s : states) {
+            String info = s;
+            if (s.equals(initialState)) info += " (initial)";
+            if (finalStates.contains(s)) info += " (final)";
+            System.out.println(" - " + info);
+        }
+
+        System.out.println("Symbols:");
+        System.out.println(" - " + String.join(", ", symbols));
+
+        System.out.println("Transitions:");
+        for (String from : transitions.keySet()) {
+            for (String sym : transitions.get(from).keySet()) {
+                String to = transitions.get(from).get(sym);
+                System.out.println(" - " + from + " -" + sym + "-> " + to);
+            }
+        }
+    }
+
+    private void handleSimulate(String[] parts) {
+        if (parts.length != 1) {
+            System.out.println("Warning: SIMULATE requires a single input string");
+            return;
+        }
+
+        String input = parts[0].toUpperCase();
+        if (initialState == null) {
+            System.out.println("Simulation failed: No initial state defined.");
+            return;
+        }
+
+        String current = initialState;
+        System.out.println("Simulation path:");
+
+        for (char c : input.toCharArray()) {
+            String symbol = String.valueOf(c);
+            System.out.print(current + " --" + symbol + "--> ");
+            if (transitions.containsKey(current) && transitions.get(current).containsKey(symbol)) {
+                current = transitions.get(current).get(symbol);
+            } else {
+                System.out.println("ERROR");
+                System.out.println("Simulation failed: No transition for symbol '" + symbol + "'");
+                return;
+            }
+        }
+
+        System.out.println(current);
+        if (finalStates.contains(current)) {
+            System.out.println("Input accepted. Final state reached.");
+        } else {
+            System.out.println("Input rejected. Final state not reached.");
+        }
+    }
+
 }
