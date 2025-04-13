@@ -4,8 +4,6 @@ import java.util.*;
 
 
 public class FSMDesigner {
-
-
     public static void main(String[] args) {
         if (args.length > 0) {
             System.out.println("This program does not accept command line arguments.");
@@ -80,7 +78,6 @@ class CommandProcessor {
                 System.out.println("Warning: unknown command '" + command + "'");
         }
     }
-
     private void handleSymbols(String[] signs) {
         if (signs.length == 0) {
             if (symbols.isEmpty()) {
@@ -169,7 +166,6 @@ class CommandProcessor {
             }
         }
     }
-
     private void handleTransition(String[] parts) {
         if (parts.length != 3) {
             System.out.println("Warning: TRANSITION requires 3 arguments (fromState symbol toState)");
@@ -239,17 +235,19 @@ class CommandProcessor {
                 }
                 break;
 
-
-            case "TRANSITION":
-                handleTransition(Arrays.copyOfRange(parts, 1, parts.length));
+            case "TRANSITIONS":
+                String joined = String.join(" ", Arrays.copyOfRange(parts, 1, parts.length));
+                String[] transitionsArray = joined.split(",");
+                for (String t : transitionsArray) {
+                    String[] oneTransitionParts = t.trim().split("\\s+");
+                    handleTransition(oneTransitionParts);
+                }
                 break;
-               
             case "DELETE":
                 handleDelete(Arrays.copyOfRange(parts, 1, parts.length));
                 break;
 
             case "PRINT":
-
                 handlePrint();
                 break;
 
@@ -261,7 +259,6 @@ class CommandProcessor {
                 System.out.println("Warning: unknown DELETE type '" + type + "'");
         }
     }
-
     private void handlePrint() {
         System.out.println("States:");
         for (String s : states) {
@@ -309,7 +306,6 @@ class CommandProcessor {
                 return;
             }
         }
-
         System.out.println(current);
         if (finalStates.contains(current)) {
             System.out.println("Input accepted. Final state reached.");
