@@ -74,6 +74,18 @@ class CommandProcessor {
             case "FINAL-STATES":
                 handleFinalStates(Arrays.copyOfRange(parts, 1, parts.length));
                 break;
+            case "TRANSITION":
+                handleTransition(Arrays.copyOfRange(parts, 1, parts.length));
+                break;
+            case "DELETE":
+                handleDelete(Arrays.copyOfRange(parts, 1, parts.length));
+                break;
+            case "PRINT":
+                handlePrint();
+                break;
+            case "SIMULATE":
+                handleSimulate(Arrays.copyOfRange(parts, 1, parts.length));
+                break;
             default:
                 System.out.println("Warning: unknown command '" + command + "'");
         }
@@ -313,5 +325,8 @@ class CommandProcessor {
             System.out.println("Input rejected. Final state not reached.");
         }
     }
+
+
+
 
 }
