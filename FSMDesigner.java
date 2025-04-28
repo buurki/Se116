@@ -1,7 +1,7 @@
 import java.time.LocalDateTime;
 import java.util.Scanner;
 import java.util.*;
-
+import java.io.*; // Added for file handling
 
 public class FSMDesigner {
     public static void main(String[] args) {
@@ -28,7 +28,7 @@ public class FSMDesigner {
                 commandBuilder.append(commandPart).append(" "); //we add it to the commandBuilder
                 String fullCommand = commandBuilder.toString().trim();
 
-             if (!fullCommand.isEmpty()) {
+                if (!fullCommand.isEmpty()) {
                     if (fullCommand.equalsIgnoreCase("EXIT")) {
                         System.out.println("TERMINATED BY USER");
                         break;
@@ -36,7 +36,7 @@ public class FSMDesigner {
                         processor.process(fullCommand); // ← if the line is not EXIT, we send the command to the processor
                     }
                 }
-              commandBuilder.setLength(0); //reset
+                commandBuilder.setLength(0); //reset
             } else {
                 commandBuilder.append(line).append(" ");
             }
@@ -51,6 +51,7 @@ class CommandProcessor {
     private String initialState = null;
     private Set<String> finalStates = new LinkedHashSet<>();
     private Map<String, Map<String, String>> transitions = new LinkedHashMap<>();
+    private PrintWriter logWriter = null; // Added for logging
 
     public CommandProcessor() { // constructor
         this.symbols = new LinkedHashSet<>(); // to store in a sorted way
@@ -86,10 +87,14 @@ class CommandProcessor {
             case "SIMULATE":
                 handleSimulate(Arrays.copyOfRange(parts, 1, parts.length));
                 break;
+            case "LOG": // Added for logging functionality
+                handleLog(Arrays.copyOfRange(parts, 1, parts.length));
+                break;
             default:
                 System.out.println("Warning: unknown command '" + command + "'");
         }
     }
+
     private void handleSymbols(String[] signs) {
         if (signs.length == 0) {
             if (symbols.isEmpty()) {
@@ -178,6 +183,7 @@ class CommandProcessor {
             }
         }
     }
+
     private void handleTransition(String[] parts) {
         if (parts.length != 3) {
             System.out.println("Warning: TRANSITION requires 3 arguments (fromState symbol toState)");
@@ -271,6 +277,7 @@ class CommandProcessor {
                 System.out.println("Warning: unknown DELETE type '" + type + "'");
         }
     }
+
     private void handlePrint() {
         System.out.println("States:");
         for (String s : states) {
@@ -326,7 +333,28 @@ class CommandProcessor {
         }
     }
 
+    // New method for handling log commands
+    private void handleLog(String[] parts) {
+        if (parts.length == 0) {
+            if (logWriter != null) {
+                logWriter.close();
+                logWriter = null;
+                System.out.println("STOPPED LOGGING");
+            } else {
+                System.out.println("LOGGING was not enabled");
+            }
+            return;
+        }
 
-
-
+        String filename = parts[0];
+        try {
+            if (logWriter != null) {
+                logWriter.close();
+            }
+            logWriter = new PrintWriter(new FileWriter(filename, false));
+            System.out.println("LOGGING to " + filename);
+        } catch (IOException e) {
+            System.out.println("Error: Unable to create log file '" + filename + "'");
+        }
+    }
 }
