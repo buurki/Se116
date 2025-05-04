@@ -319,7 +319,7 @@ class CommandProcessor {
         }
     }
 
-    // New method for handling log commands
+    // For handling log commands
     private void handleLog(String[] parts) {
         if (parts.length == 0) {
             if (logWriter != null) {
@@ -344,7 +344,7 @@ class CommandProcessor {
         }
     }
 
-    // New method for saving FSM to a file
+    // For saving FSM to a file
     private void handleCompile(String[] parts) {
         if (parts.length != 1) {
             System.out.println("Warning COMPILE requires exactly one filename");
