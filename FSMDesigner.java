@@ -87,6 +87,9 @@ class CommandProcessor {
             case "SIMULATE":
                 handleSimulate(Arrays.copyOfRange(parts, 1, parts.length));
                 break;
+            case "EXECUTE":
+                handleExecute(Arrays.copyOfRange(parts, 1, parts.length));
+                break;
             case "LOG": // Added for logging functionality
                 handleLog(Arrays.copyOfRange(parts, 1, parts.length));
                 break;
@@ -226,6 +229,7 @@ class CommandProcessor {
 
         transitions.get(from).put(symbol, to);
     }
+
     public void handleClear() {
         symbols.clear();
         states.clear();
@@ -327,6 +331,60 @@ class CommandProcessor {
             System.out.println("Input rejected. Final state not reached.");
         }
     }
+
+    private void handleExecute(String[] inputs) {
+        if (inputs.length == 0) {
+            System.out.println("!! EXECUTE requires at least one input string");
+            return;
+        }
+
+        for (String input : inputs) {
+            input = input.toUpperCase();
+            System.out.println("Executing input: " + input);
+
+            try {
+                if (!input.matches("[A-Z0-9]+")) {
+                    throw new Exception("Error: Input contains invalid characters. Only A-Z and 0-9 allowed.");
+                }
+
+                if (initialState == null) {
+                    throw new Exception("Simulation failed: No initial state defined.");
+                }
+
+                String current = initialState;
+                System.out.print("Path: " + current);
+
+                // Simulate transitions based on input symbols
+                for (char c : input.toCharArray()) {
+                    String symbol = String.valueOf(c);
+
+                    if (!symbols.contains(symbol)) {
+                        throw new Exception("Error: Symbol '" + symbol + "' is not declared.");
+                    }
+
+                    if (!transitions.containsKey(current) || !transitions.get(current).containsKey(symbol)) {
+                        throw new Exception("Simulation failed: No transition for symbol '" + symbol + "' from state '" + current + "'");
+                    }
+
+                    current = transitions.get(current).get(symbol);
+                    System.out.print(" --" + symbol + "--> " + current);
+                }
+
+                System.out.println();
+                String result = finalStates.contains(current) ? "YES" : "NO";
+                System.out.println(result);
+
+                if (logWriter != null) {
+                    logWriter.println("Input: " + input + " == Result: " + result);
+                    logWriter.flush(); // immediately writes the buffered log data to the file
+                }
+
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
+            }
+        }
+    }
+
 
     // For handling log commands
     private void handleLog(String[] parts) {
