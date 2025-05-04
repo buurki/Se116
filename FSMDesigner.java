@@ -96,6 +96,9 @@ class CommandProcessor {
             case "LOAD": // Added for loading FSM from a file
                 handleLoad(Arrays.copyOfRange(parts, 1, parts.length));
                 break;
+            case "CLEAR":
+                handleClear();
+                break;
             default:
                 System.out.println("Warning: unknown command '" + command + "'");
         }
@@ -223,7 +226,13 @@ class CommandProcessor {
 
         transitions.get(from).put(symbol, to);
     }
-
+    public void handleClear() {
+        symbols.clear();
+        states.clear();
+        initialState = null;
+        finalStates.clear();
+        transitions.clear();
+        System.out.println("FSM cleared"); }
     private void handleDelete(String[] parts) {
         if (parts.length < 2) {
             System.out.println("Warning: DELETE command requires type and name");
