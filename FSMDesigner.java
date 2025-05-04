@@ -90,6 +90,12 @@ class CommandProcessor {
             case "LOG": // Added for logging functionality
                 handleLog(Arrays.copyOfRange(parts, 1, parts.length));
                 break;
+            case "COMPILE": // Added for saving FSM to a file
+                handleCompile(Arrays.copyOfRange(parts, 1, parts.length));
+                break;
+            case "LOAD": // Added for loading FSM from a file
+                handleLoad(Arrays.copyOfRange(parts, 1, parts.length));
+                break;
             default:
                 System.out.println("Warning: unknown command '" + command + "'");
         }
@@ -253,26 +259,6 @@ class CommandProcessor {
                 }
                 break;
 
-            case "TRANSITIONS":
-                String joined = String.join(" ", Arrays.copyOfRange(parts, 1, parts.length));
-                String[] transitionsArray = joined.split(",");
-                for (String t : transitionsArray) {
-                    String[] oneTransitionParts = t.trim().split("\\s+");
-                    handleTransition(oneTransitionParts);
-                }
-                break;
-            case "DELETE":
-                handleDelete(Arrays.copyOfRange(parts, 1, parts.length));
-                break;
-
-            case "PRINT":
-                handlePrint();
-                break;
-
-            case "SIMULATE":
-                handleSimulate(Arrays.copyOfRange(parts, 1, parts.length));
-                break;
-
             default:
                 System.out.println("Warning: unknown DELETE type '" + type + "'");
         }
@@ -307,7 +293,7 @@ class CommandProcessor {
 
         String input = parts[0].toUpperCase();
         if (initialState == null) {
-            System.out.println("Simulation failed: No initial state defined.");
+            System.out.println("Simulation failed No initial state defined.");
             return;
         }
 
@@ -321,7 +307,7 @@ class CommandProcessor {
                 current = transitions.get(current).get(symbol);
             } else {
                 System.out.println("ERROR");
-                System.out.println("Simulation failed: No transition for symbol '" + symbol + "'");
+                System.out.println("Simulation failed: No transition for symbol " + symbol );
                 return;
             }
         }
@@ -354,7 +340,44 @@ class CommandProcessor {
             logWriter = new PrintWriter(new FileWriter(filename, false));
             System.out.println("LOGGING to " + filename);
         } catch (IOException e) {
-            System.out.println("Error: Unable to create log file '" + filename + "'");
+            System.out.println("Error Unable to create log file " + filename );
+        }
+    }
+
+    // New method for saving FSM to a file
+    private void handleCompile(String[] parts) {
+        if (parts.length != 1) {
+            System.out.println("Warning COMPILE requires exactly one filename");
+            return;
+        }
+
+        String filename = parts[0];
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filename))) {
+            oos.writeObject(this);
+            System.out.println("FSM saved to file " + filename);
+        } catch (IOException e) {
+            System.out.println("Error Unable to save FSM to file '" + filename + "'");
+        }
+    }
+
+    // New method for loading FSM from a file
+    private void handleLoad(String[] parts) {
+        if (parts.length != 1) {
+            System.out.println("Warning LOAD requires exactly one filename");
+            return;
+        }
+
+        String filename = parts[0];
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(filename))) {
+            CommandProcessor loadedFSM = (CommandProcessor) ois.readObject();
+            this.symbols = loadedFSM.symbols;
+            this.states = loadedFSM.states;
+            this.initialState = loadedFSM.initialState;
+            this.finalStates = loadedFSM.finalStates;
+            this.transitions = loadedFSM.transitions;
+            System.out.println("FSM loaded from file: " + filename);
+        } catch (IOException | ClassNotFoundException e) {
+            System.out.println("Error: Unable to load FSM from file '" + filename + "'");
         }
     }
 }
