@@ -332,56 +332,60 @@ class CommandProcessor {
         }
     }
 
-    private void handleExecute(String[] inputs) {
-        if (inputs.length == 0) {
-            System.out.println("!! EXECUTE requires at least one input string");
+    private void handleExecute(String[] parts) {
+        // Argument count check
+        if (parts.length != 1) {
+            System.out.println("Error: EXECUTE requires exactly one input string");
             return;
         }
+        String input = parts[0].toUpperCase();
 
-        for (String input : inputs) {
-            input = input.toUpperCase();
-            System.out.println("Executing input: " + input);
-
-            try {
-                if (!input.matches("[A-Z0-9]+")) {
-                    throw new Exception("Error: Input contains invalid characters. Only A-Z and 0-9 allowed.");
-                }
-
-                if (initialState == null) {
-                    throw new Exception("Simulation failed: No initial state defined.");
-                }
-
-                String current = initialState;
-                System.out.print("Path: " + current);
-
-                // Simulate transitions based on input symbols
-                for (char c : input.toCharArray()) {
-                    String symbol = String.valueOf(c);
-
-                    if (!symbols.contains(symbol)) {
-                        throw new Exception("Error: Symbol '" + symbol + "' is not declared.");
-                    }
-
-                    if (!transitions.containsKey(current) || !transitions.get(current).containsKey(symbol)) {
-                        throw new Exception("Simulation failed: No transition for symbol '" + symbol + "' from state '" + current + "'");
-                    }
-
-                    current = transitions.get(current).get(symbol);
-                    System.out.print(" --" + symbol + "--> " + current);
-                }
-
-                System.out.println();
-                String result = finalStates.contains(current) ? "YES" : "NO";
-                System.out.println(result);
-
-                if (logWriter != null) {
-                    logWriter.println("Input: " + input + " == Result: " + result);
-                    logWriter.flush(); // immediately writes the buffered log data to the file
-                }
-
-            } catch (Exception e) {
-                System.out.println(e.getMessage());
+        try {
+            // Alphanumeric check
+            if (!input.matches("[A-Z0-9]+")) {
+                System.out.println("Error: input must be alphanumeric (A–Z, 0–9 only)");
+                return;
             }
+
+            // Initial state must be defined
+            if (initialState == null) {
+                System.out.println("Error: no initial state defined");
+                return;
+            }
+
+            // Symbol validation
+            for (char c : input.toCharArray()) {
+                String sym = String.valueOf(c);
+                if (!symbols.contains(sym)) {
+                    System.out.println("Error: symbol '" + sym + "' not recognized");
+                    return;
+                }
+            }
+
+            // Simulate transitions and record path
+            List<String> path = new ArrayList<>();
+            String current = initialState;
+            path.add(current);
+
+            for (char c : input.toCharArray()) {
+                Map<String, String> map = transitions.get(current);
+                if (map == null || !map.containsKey(String.valueOf(c))) {
+                    System.out.println("NO");
+                    return;
+                }
+                current = map.get(String.valueOf(c));
+                path.add(current);
+            }
+
+            // Print the sequence of states
+            System.out.println(String.join(" ", path));
+
+            // Print final result
+            System.out.println(finalStates.contains(current) ? "YES" : "NO");
+
+        } catch (Exception e) {
+            // unexpected exception handling
+            System.out.println("Error: unexpected exception during EXECUTE – " + e.getMessage());
         }
     }
 
