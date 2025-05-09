@@ -78,11 +78,17 @@ class CommandProcessor {
             case "TRANSITION":
                 handleTransition(Arrays.copyOfRange(parts, 1, parts.length));
                 break;
+            case "TRANSITIONS":
+                handleTransitions(Arrays.copyOfRange(parts, 1, parts.length));
+                break;
             case "DELETE":
                 handleDelete(Arrays.copyOfRange(parts, 1, parts.length));
                 break;
             case "PRINT":
                 handlePrint();
+                break;
+            case "SIMULATE":
+                handleSimulate(Arrays.copyOfRange(parts, 1, parts.length));
                 break;
             case "EXECUTE":
                 handleExecute(Arrays.copyOfRange(parts, 1, parts.length));
@@ -226,6 +232,38 @@ class CommandProcessor {
 
         transitions.get(from).put(symbol, to);
     }
+    private void handleTransitions(String[] parts) {
+        String joined = String.join(" ", parts);
+        String[] entries = joined.split(",");
+
+        for (String e : entries) {
+            String[] p = e.trim().split("\\s+");
+            if (p.length != 3) {
+                System.out.println("Error: TRANSITIONS entries must be '<symbol> <from> <to>'");
+                continue;
+            }
+
+            String sym  = p[0].toUpperCase();
+            String from = p[1].toUpperCase();
+            String to   = p[2].toUpperCase();
+
+            if (!symbols.contains(sym)) {
+                System.out.println("Error: invalid symbol '" + sym + "'");
+                continue;
+            }
+            if (!states.contains(from)) {
+                System.out.println("Error: invalid state '" + from + "'");
+                continue;
+            }
+            if (!states.contains(to)) {
+                System.out.println("Error: invalid state '" + to + "'");
+                continue;
+            }
+
+            transitions.putIfAbsent(from, new LinkedHashMap<>());
+            transitions.get(from).put(sym, to);
+        }
+    }
 
     public void handleClear() {
         symbols.clear();
@@ -233,7 +271,9 @@ class CommandProcessor {
         initialState = null;
         finalStates.clear();
         transitions.clear();
-        System.out.println("FSM cleared"); }
+        System.out.println("FSM cleared");
+    }
+
     private void handleDelete(String[] parts) {
         if (parts.length < 2) {
             System.out.println("Warning: DELETE command requires type and name");
@@ -295,6 +335,46 @@ class CommandProcessor {
         }
     }
 
+    private void handleSimulate(String[] parts) {
+        if (parts.length != 1) {
+            System.out.println("Warning: SIMULATE requires a single input string");
+            return;
+        }
+
+        String input = parts[0].toUpperCase();
+        if (initialState == null) {
+            System.out.println("Simulation failed No initial state defined.");
+            return;
+        }
+
+        String current = initialState;
+        System.out.println("Simulation path:");
+
+        for (char c : input.toCharArray()) {
+            String symbol = String.valueOf(c);
+            System.out.print(current + " --" + symbol + "--> ");
+            if (transitions.containsKey(current) && transitions.get(current).containsKey(symbol)) {
+                current = transitions.get(current).get(symbol);
+            } else {
+                System.out.println("ERROR");
+                System.out.println("Simulation failed: No transition for symbol " + symbol);
+                return;
+            }
+        }
+        System.out.println(current);
+        if (finalStates.contains(current)) {
+            System.out.println("Input accepted. Final state reached.");
+        } else {
+            System.out.println("Input rejected. Final state not reached.");
+        }
+    }
+    /**
+     * Applies the extended transition function T* for the input string:
+     *   T*("",  c) = c
+     *   T*(aw, c) = T*(w, T(a,c))
+     * where T(a,c) is lookup in `transitions` map.
+     * Prints the state sequence and YES/NO accept result.
+     */
     private void handleExecute(String[] parts) {
         // Argument count check
         if (parts.length != 1) {
@@ -374,7 +454,7 @@ class CommandProcessor {
             logWriter = new PrintWriter(new FileWriter(filename, false));
             System.out.println("LOGGING to " + filename);
         } catch (IOException e) {
-            System.out.println("Error Unable to create log file " + filename );
+            System.out.println("Error Unable to create log file " + filename);
         }
     }
 
@@ -395,7 +475,7 @@ class CommandProcessor {
     }
 
     // New method for loading FSM from a file
-    private void handleLoad(String[] parts) {
+    void handleLoad(String[] parts) {
         if (parts.length != 1) {
             System.out.println("Warning LOAD requires exactly one filename");
             return;
