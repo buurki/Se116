@@ -84,9 +84,6 @@ class CommandProcessor {
             case "PRINT":
                 handlePrint();
                 break;
-            case "SIMULATE":
-                handleSimulate(Arrays.copyOfRange(parts, 1, parts.length));
-                break;
             case "EXECUTE":
                 handleExecute(Arrays.copyOfRange(parts, 1, parts.length));
                 break;
@@ -295,40 +292,6 @@ class CommandProcessor {
                 String to = transitions.get(from).get(sym);
                 System.out.println(" - " + from + " -" + sym + "-> " + to);
             }
-        }
-    }
-
-    private void handleSimulate(String[] parts) {
-        if (parts.length != 1) {
-            System.out.println("Warning: SIMULATE requires a single input string");
-            return;
-        }
-
-        String input = parts[0].toUpperCase();
-        if (initialState == null) {
-            System.out.println("Simulation failed No initial state defined.");
-            return;
-        }
-
-        String current = initialState;
-        System.out.println("Simulation path:");
-
-        for (char c : input.toCharArray()) {
-            String symbol = String.valueOf(c);
-            System.out.print(current + " --" + symbol + "--> ");
-            if (transitions.containsKey(current) && transitions.get(current).containsKey(symbol)) {
-                current = transitions.get(current).get(symbol);
-            } else {
-                System.out.println("ERROR");
-                System.out.println("Simulation failed: No transition for symbol " + symbol );
-                return;
-            }
-        }
-        System.out.println(current);
-        if (finalStates.contains(current)) {
-            System.out.println("Input accepted. Final state reached.");
-        } else {
-            System.out.println("Input rejected. Final state not reached.");
         }
     }
 
