@@ -22,7 +22,7 @@ public class FSMDesigner {
         String line;
 
         // Main command processing loop
-        while (true) {
+        while (true) { // this loop continues until the EXIT command is entered
             System.out.print("? ");
             line = sc.nextLine().trim();
 
@@ -48,8 +48,8 @@ public class FSMDesigner {
                 }
                 commandBuilder.setLength(0); //reset command buffer
             } else {
-                // Handle multi-line commands
-                commandBuilder.append(line).append(" ");
+                System.out.println("Error: Semicolon expected"); // if the line does not contain ";", print an error message
+                continue;
             }
         }
         sc.close();
@@ -78,7 +78,7 @@ class CommandProcessor implements Serializable {
         if (parts.length == 0)
             return;
 
-        // Extract and uppercase the command
+        // Extract and uppercase the first word as the command
         String command = parts[0].toUpperCase(); // command is the first word in the line
 
         // Route to appropriate handler
@@ -410,10 +410,10 @@ class CommandProcessor implements Serializable {
         // Print states with their properties
         System.out.println("States:");
         for (String s : states) {
-            String info = s;
-            if (s.equals(initialState)) info += " (initial)";
-            if (finalStates.contains(s)) info += " (final)";
-            System.out.println(" - " + info);
+            String info = s; // start with the state name
+            if (s.equals(initialState)) info += " (initial)"; //mark the inital state
+            if (finalStates.contains(s)) info += " (final)"; //mark the final state
+            System.out.println(" - " + info);  //print the info
         }
 
         // Print symbol alphabet
@@ -423,9 +423,9 @@ class CommandProcessor implements Serializable {
         // Print all transitions
         System.out.println("Transitions:");
         for (String from : transitions.keySet()) {
-            for (String sym : transitions.get(from).keySet()) {
-                String to = transitions.get(from).get(sym);
-                System.out.println(" - " + from + " -" + sym + "-> " + to);
+            for (String transitionSymbol : transitions.get(from).keySet()) {
+                String to = transitions.get(from).get(transitionSymbol); //get the destination state for this transition
+                System.out.println(" - " + from + " -" + transitionSymbol + "-> " + to);
             }
         }
     }
