@@ -12,46 +12,55 @@ public class FSMDesigner {
         }
 
         // Initialize program with version and timestamp
-        String versionNo = "v1.0"; // I didn't understand how to combine version numbers from github. It will change.
+        String versionNo = "v1.0";
         System.out.println("FSM DESIGNER " + versionNo + " " + LocalDateTime.now());
 
         // Set up input scanner and command processor
         Scanner sc = new Scanner(System.in);
         StringBuilder commandBuilder = new StringBuilder();
         CommandProcessor processor = new CommandProcessor();
-        String line;
 
         // Main command processing loop
-        while (true) { // this loop continues until the EXIT command is entered
+        while (true) {
             System.out.print("? ");
-            line = sc.nextLine().trim();
+            String line = sc.nextLine().trim();
 
             // Skip comments and empty lines
-            if (line.startsWith(";") || line.isEmpty()) { //if line starts with ; or is empty, then it skips
+            if (line.startsWith(";") || line.isEmpty()) {
                 continue;
             }
+            // Check if this line ends a command
+            boolean hasSemicolon = line.contains(";");
+            boolean isTransitionsStart = commandBuilder.length() == 0
+                    && line.toUpperCase().startsWith("TRANSITIONS");
 
-            // Process commands terminated by semicolon
-            if (line.contains(";")) {
-                int semicolonIndex = line.indexOf(';'); //take the line until the ";"
-                String commandPart = line.substring(0, semicolonIndex).trim(); //take the line until the ";"
-                commandBuilder.append(commandPart).append(" "); //we add it to the commandBuilder
-                String fullCommand = commandBuilder.toString().trim();
-
-                if (!fullCommand.isEmpty()) {
-                    if (fullCommand.equalsIgnoreCase("EXIT")) {
-                        System.out.println("TERMINATED BY USER");
-                        break;
-                    } else {
-                        processor.process(fullCommand); // ← if the line is not EXIT, we send the command to the processor
-                    }
+            // Handle lines without a semicolon
+            if (!hasSemicolon) {
+                if (commandBuilder.length() > 0 || isTransitionsStart) {
+                    // Continue building a multi-line TRANSITIONS block
+                    commandBuilder.append(line).append(" ");
+                } else {
+                    // Single-line commands must end with ';'
+                    System.out.println("Error: Semicolon expected");
                 }
-                commandBuilder.setLength(0); //reset command buffer
-            } else {
-                System.out.println("Error: Semicolon expected"); // if the line does not contain ";", print an error message
                 continue;
             }
+
+            // Extract command up to semicolon
+            int index = line.indexOf(';');
+            String part = line.substring(0, index).trim();
+            commandBuilder.append(part).append(" ");
+            String fullCommand = commandBuilder.toString().trim();
+            commandBuilder.setLength(0);  // Reset builder for next command
+
+            // Exit condition
+            if (fullCommand.equalsIgnoreCase("EXIT")) {
+                System.out.println("TERMINATED BY USER");
+                break;
+            }
+            processor.process(fullCommand);
         }
+
         sc.close();
     }
 }
@@ -63,7 +72,7 @@ class CommandProcessor implements Serializable {
     private String initialState = null;
     private Set<String> finalStates = new LinkedHashSet<>();
     private Map<String, Map<String, String>> transitions = new LinkedHashMap<>();
-    private PrintWriter logWriter = null; // Added for logging
+    private transient PrintWriter logWriter=null; // Added for logging
 
     public CommandProcessor() { // constructor
         this.symbols = new LinkedHashSet<>(); // to store in a sorted way
@@ -567,7 +576,7 @@ class CommandProcessor implements Serializable {
             this.transitions = loadedFSM.transitions;
             System.out.println("FSM loaded from file: " + filename);
         } catch (IOException | ClassNotFoundException e) {
-            System.out.println("Error: Unable to load FSM from file '" + filename + "'");
+            System.err.println("Error: Unable to load FSM from file '" + filename + "': " + e);
         }
     }
 }
